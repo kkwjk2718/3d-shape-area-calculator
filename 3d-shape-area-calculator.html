@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3차원 도형 면적 계산기</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+        }
+        .description-box, .author-box {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            color: #333;
+            font-size: 14px;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+        .coordinates {
+            margin-bottom: 20px;
+        }
+        button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .result {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>3차원 도형 면적 계산기</h1>
+    
+    <div class="description-box">
+        이 계산기는 사용자가 입력한 3차원 좌표를 기반으로 다각형의 면적을 계산합니다. 먼저 꼭짓점의 개수를 입력하고 좌표 입력하기 버튼을 눌러 각 좌표를 입력할 수 있는 필드를 생성하세요. 모든 좌표를 입력한 후 '면적 계산' 버튼을 누르면 면적이 계산됩니다. 주의사항: 꼭짓점이 2이하이거나 입력된 좌표가 직선인경우 넓이가 계산되지 않습니다!
+    </div>
+
+    <div class="author-box">
+        제작자: 김건우
+    </div>
+
+    <div class="input-group">
+        <label for="n">꼭짓점의 수 (n):</label>
+        <input type="number" id="n" min="3" required>
+        <button onclick="generateInputs()">좌표 입력하기</button>
+    </div>
+
+    <div class="coordinates" id="coordinates"></div>
+    <button onclick="calculateArea()">면적 계산</button>
+
+    <div class="result" id="result"></div>
+
+    <script>
+        function generateInputs() {
+            const n = parseInt(document.getElementById("n").value);
+            const coordinatesDiv = document.getElementById("coordinates");
+            coordinatesDiv.innerHTML = "";
+            for (let i = 0; i < n; i++) {
+                coordinatesDiv.innerHTML += `
+                    <div class="input-group">
+                        <label>V${i + 1}:</label>
+                        <input type="number" placeholder="x${i + 1}" id="x${i}" step="any" required>
+                        <input type="number" placeholder="y${i + 1}" id="y${i}" step="any" required>
+                        <input type="number" placeholder="z${i + 1}" id="z${i}" step="any" required>
+                    </div>
+                `;
+            }
+        }
+
+        function calculateArea() {
+            const n = parseInt(document.getElementById("n").value);
+            const vertices = [];
+            for (let i = 0; i < n; i++) {
+                const x = parseFloat(document.getElementById(`x${i}`).value);
+                const y = parseFloat(document.getElementById(`y${i}`).value);
+                const z = parseFloat(document.getElementById(`z${i}`).value);
+                vertices.push([x, y, z]);
+            }
+
+            const area = polygonArea3D(vertices);
+            document.getElementById("result").innerText = "계산된 면적: " + area.toFixed(2);
+        }
+
+        function polygonArea3D(vertices) {
+            const normal = crossProduct(
+                subtract(vertices[1], vertices[0]),
+                subtract(vertices[2], vertices[0])
+            );
+            const normalLength = Math.sqrt(normal[0]**2 + normal[1]**2 + normal[2]**2);
+            const unitNormal = normal.map(x => x / normalLength);
+            
+            const basis1 = unitVector(subtract(vertices[1], vertices[0]));
+            const basis2 = crossProduct(unitNormal, basis1);
+
+            const vertices2D = vertices.map(vertex => {
+                const v = subtract(vertex, vertices[0]);
+                const x = dotProduct(v, basis1);
+                const y = dotProduct(v, basis2);
+                return [x, y];
+            });
+
+            let area = 0;
+            for (let i = 0; i < vertices2D.length; i++) {
+                const [x1, y1] = vertices2D[i];
+                const [x2, y2] = vertices2D[(i + 1) % vertices2D.length];
+                area += x1 * y2 - y1 * x2;
+            }
+            return Math.abs(area) / 2.0;
+        }
+
+        function crossProduct(a, b) {
+            return [
+                a[1] * b[2] - a[2] * b[1],
+                a[2] * b[0] - a[0] * b[2],
+                a[0] * b[1] - a[1] * b[0]
+            ];
+        }
+
+        function dotProduct(a, b) {
+            return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+        }
+
+        function subtract(a, b) {
+            return [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+        }
+
+        function unitVector(v) {
+            const length = Math.sqrt(v[0]**2 + v[1]**2 + v[2]**2);
+            return v.map(x => x / length);
+        }
+    </script>
+
+</body>
+</html>
